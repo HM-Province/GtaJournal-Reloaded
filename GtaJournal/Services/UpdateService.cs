@@ -23,6 +23,9 @@ public sealed partial class UpdateService(MessageService messages, DialogService
     /// <summary>Ключи установщика: окно с прогрессом без вопросов, перезагрузку не предлагать.</summary>
     private const string InstallerArguments = "/SILENT /SUPPRESSMSGBOXES /NORESTART";
 
+    private static readonly TimeSpan ApiTimeout = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan ProgressInterval = TimeSpan.FromMilliseconds(250);
+
     // Порядок важен: клиент берёт версию в User-Agent.
     public static Version CurrentVersion { get; } = Normalize(Assembly.GetEntryAssembly()?.GetName().Version ?? new Version(1, 0, 0));
 
@@ -46,6 +49,8 @@ public sealed partial class UpdateService(MessageService messages, DialogService
     {
         if (_busy) return;
         _busy = true;
+        // Отмену загрузки из диалога отличаем от таймаута запроса к GitHub.
+        var downloading = false;
         try
         {
             var release = await GetLatestReleaseAsync();
@@ -68,11 +73,16 @@ public sealed partial class UpdateService(MessageService messages, DialogService
                 return;
             }
 
-            messages.Info("Загрузка обновления", $"Версия {release.Version.ToString(3)}");
-            var installer = await DownloadAsync(release);
+            downloading = true;
+            var installer = await dialogs.RunWithProgressAsync($"Загрузка версии {release.Version.ToString(3)}",
+                (report, ct) => DownloadAsync(release, report, ct));
 
             Process.Start(new ProcessStartInfo(installer, InstallerArguments) { UseShellExecute = true });
             App.Current.ExitApplication();
+        }
+        catch (OperationCanceledException) when (downloading)
+        {
+            messages.Info("Обновление отменено", "Его можно установить позже: Настройки → Проверить обновления");
         }
         catch (Exception ex)
         {
@@ -87,14 +97,15 @@ public sealed partial class UpdateService(MessageService messages, DialogService
 
     private static async Task<AppRelease?> GetLatestReleaseAsync()
     {
+        using var timeout = new CancellationTokenSource(ApiTimeout);
         using var request = new HttpRequestMessage(HttpMethod.Get, LatestReleaseApi);
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
-        using var response = await Http.SendAsync(request);
+        using var response = await Http.SendAsync(request, timeout.Token);
         // 404 — релизов ещё нет.
         if (response.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
         response.EnsureSuccessStatusCode();
 
-        using var json = JsonDocument.Parse(await response.Content.ReadAsStreamAsync());
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStreamAsync(timeout.Token));
         var root = json.RootElement;
         var tag = root.GetProperty("tag_name").GetString() ?? "";
         if (!Version.TryParse(tag.TrimStart('v', 'V'), out var version)) return null;
@@ -119,20 +130,47 @@ public sealed partial class UpdateService(MessageService messages, DialogService
         return null;
     }
 
-    private static async Task<string> DownloadAsync(AppRelease release)
+    /// <summary>Скачивает установщик, сообщая через <paramref name="report"/> объём, скорость и оставшееся время.</summary>
+    private static async Task<string> DownloadAsync(AppRelease release, Action<double?, string> report, CancellationToken ct)
     {
         var folder = Path.Combine(Path.GetTempPath(), "GtaJournal-Update");
         if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true);
         Directory.CreateDirectory(folder);
         var path = Path.Combine(folder, Path.GetFileName(release.InstallerName));
 
-        using (var response = await Http.GetAsync(release.InstallerUrl, HttpCompletionOption.ResponseHeadersRead))
+        report(null, "Подключение…");
+        using (var response = await Http.GetAsync(release.InstallerUrl, HttpCompletionOption.ResponseHeadersRead, ct))
         {
             response.EnsureSuccessStatusCode();
+            var total = response.Content.Headers.ContentLength ?? release.Size;
+
+            await using var source = await response.Content.ReadAsStreamAsync(ct);
             await using var file = File.Create(path);
-            await response.Content.CopyToAsync(file);
+            var buffer = new byte[81920];
+            var received = 0L;
+            var clock = Stopwatch.StartNew();
+            var lastReport = TimeSpan.Zero;
+            var lastReceived = 0L;
+            double? speed = null;
+
+            int read;
+            while ((read = await source.ReadAsync(buffer, ct)) > 0)
+            {
+                await file.WriteAsync(buffer.AsMemory(0, read), ct);
+                received += read;
+
+                // Обновляем диалог 4 раза в секунду; скорость сглаживаем, чтобы цифры не прыгали.
+                var elapsed = clock.Elapsed - lastReport;
+                if (elapsed < ProgressInterval && received < total) continue;
+                var current = (received - lastReceived) / Math.Max(elapsed.TotalSeconds, 0.001);
+                speed = speed is { } s ? s * 0.7 + current * 0.3 : current;
+                lastReport = clock.Elapsed;
+                lastReceived = received;
+                report(total > 0 ? (double)received / total : null, ProgressText(received, total, speed.Value));
+            }
         }
 
+        report(null, "Проверка файла…");
         var info = new FileInfo(path);
         if (info.Length != release.Size)
             throw new InvalidOperationException("Установщик скачался не полностью, попробуйте ещё раз");
@@ -140,16 +178,45 @@ public sealed partial class UpdateService(MessageService messages, DialogService
         if (release.Sha256 is { } expected)
         {
             await using var stream = File.OpenRead(path);
-            var actual = Convert.ToHexString(await SHA256.HashDataAsync(stream));
+            var actual = Convert.ToHexString(await SHA256.HashDataAsync(stream, ct));
             if (!actual.Equals(expected, StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException("Контрольная сумма установщика не совпадает");
         }
+
+        report(1, "Запуск установки…");
         return path;
     }
 
+    /// <summary>«12,3 из 85,0 МБ · 2,4 МБ/с · осталось ~30 с»</summary>
+    private static string ProgressText(long received, long total, double bytesPerSecond)
+    {
+        var text = total > 0 ? $"{FormatSize(received)} из {FormatSize(total)}" : FormatSize(received);
+        if (bytesPerSecond < 1) return text;
+        text += $" · {FormatSize((long)bytesPerSecond)}/с";
+        if (total > received)
+            text += $" · осталось ~{FormatDuration(TimeSpan.FromSeconds((total - received) / bytesPerSecond))}";
+        return text;
+    }
+
+    private static string FormatSize(long bytes) => bytes switch
+    {
+        >= 1024 * 1024 => $"{bytes / 1024d / 1024:0.0} МБ",
+        >= 1024 => $"{bytes / 1024d:0} КБ",
+        _ => $"{bytes} Б",
+    };
+
+    private static string FormatDuration(TimeSpan time) => time.TotalSeconds switch
+    {
+        < 60 => $"{Math.Max(1, (int)Math.Ceiling(time.TotalSeconds))} с",
+        < 3600 => $"{(int)time.TotalMinutes} мин {time.Seconds} с",
+        _ => $"{(int)time.TotalHours} ч {time.Minutes} мин",
+    };
+
     private static HttpClient CreateClient()
     {
-        var client = new HttpClient { Timeout = TimeSpan.FromMinutes(5) };
+        // Без общего таймаута: на медленном интернете загрузка установщика может идти дольше любого лимита.
+        // Запрос к API ограничен ApiTimeout, загрузку можно отменить из диалога.
+        var client = new HttpClient { Timeout = Timeout.InfiniteTimeSpan };
         // GitHub API требует User-Agent.
         client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("GtaJournal", CurrentVersion.ToString(3)));
         return client;
