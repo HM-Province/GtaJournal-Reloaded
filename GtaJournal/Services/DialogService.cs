@@ -48,6 +48,50 @@ public sealed class DialogService
         return await dialog.ShowAsync() == ContentDialogResult.Primary ? box.Text : null;
     }
 
+    /// <summary>
+    /// Выполняет <paramref name="work"/>, показывая диалог с полосой прогресса и кнопкой «Отмена».
+    /// Через переданный колбэк работа сообщает долю (0..1, null — неизвестно) и строку состояния.
+    /// Закрытие диалога отменяет токен — работа завершится <see cref="OperationCanceledException"/>.
+    /// </summary>
+    public async Task<T> RunWithProgressAsync<T>(string title, Func<Action<double?, string>, CancellationToken, Task<T>> work)
+    {
+        if (_xamlRoot is null) throw new InvalidOperationException("Окно приложения ещё не готово");
+
+        using var cts = new CancellationTokenSource();
+        var bar = new ProgressBar { IsIndeterminate = true, Minimum = 0, Maximum = 1 };
+        var status = new TextBlock { Text = "Подготовка…", TextWrapping = TextWrapping.Wrap };
+        var dialog = new ContentDialog
+        {
+            XamlRoot = _xamlRoot,
+            RequestedTheme = RootTheme,
+            Title = title,
+            Content = new StackPanel { Spacing = 12, MinWidth = 360, Children = { bar, status } },
+            CloseButtonText = "Отмена",
+        };
+
+        var finished = false;
+        dialog.Closing += (_, _) =>
+        {
+            if (!finished) cts.Cancel();
+        };
+        _ = dialog.ShowAsync();
+
+        try
+        {
+            return await work((fraction, text) =>
+            {
+                bar.IsIndeterminate = fraction is null;
+                if (fraction is { } f) bar.Value = Math.Clamp(f, 0, 1);
+                status.Text = text;
+            }, cts.Token);
+        }
+        finally
+        {
+            finished = true;
+            dialog.Hide();
+        }
+    }
+
     public static void CopyToClipboard(string text)
     {
         var package = new DataPackage();
