@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<nav:RoutedPage
+    x:Class="GtaJournal.Views.ShellPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:nav="using:GtaJournal.Core.Navigation">
+
+    <NavigationView
+        x:Name="NavView"
+        PaneDisplayMode="Left"
+        IsSettingsVisible="False"
+        IsBackButtonVisible="Auto"
+        IsBackEnabled="False"
+        AlwaysShowHeader="False"
+        OpenPaneLength="260"
+        IsTitleBarAutoPaddingEnabled="False"
+        ItemInvoked="OnItemInvoked"
+        BackRequested="OnBackRequested">
+
+        <NavigationView.PaneFooter>
+            <Button
+                x:Name="AccountButton"
+                Margin="4,0,4,8"
+                Padding="6"
+                HorizontalAlignment="Stretch"
+                HorizontalContentAlignment="Left"
+                Background="Transparent"
+                BorderThickness="0"
+                ToolTipService.ToolTip="Аккаунт"
+                AutomationProperties.Name="Аккаунт"
+                Click="OnAccountButtonClick">
+                <Grid ColumnSpacing="10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Grid Width="32" Height="32">
+                        <PersonPicture Width="32" Height="32" ProfilePicture="{x:Bind ViewModel.Avatar, Mode=OneWay}" DisplayName="{x:Bind ViewModel.AccountTitle, Mode=OneWay}" />
+                        <Ellipse Width="11" Height="11" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                 Fill="{x:Bind ViewModel.StatusBrush, Mode=OneWay}"
+                                 Stroke="{ThemeResource SolidBackgroundFillColorBaseBrush}" StrokeThickness="2" />
+                    </Grid>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="{x:Bind ViewModel.AccountTitle, Mode=OneWay}" Style="{StaticResource BodyStrongTextBlockStyle}" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="{x:Bind ViewModel.AccountSubtitle, Mode=OneWay}" Style="{StaticResource HintTextStyle}" />
+                    </StackPanel>
+                    <FontIcon Grid.Column="2" Glyph="&#xE70D;" FontSize="12" />
+                </Grid>
+            </Button>
+        </NavigationView.PaneFooter>
+
+        <Frame x:Name="ContentFrame" />
+    </NavigationView>
+</nav:RoutedPage>

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<nav:RoutedPage
+    x:Class="GtaJournal.Views.AccountsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:nav="using:GtaJournal.Core.Navigation"
+    xmlns:vm="using:GtaJournal.ViewModels"
+    xmlns:h="using:GtaJournal.Helpers">
+
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled">
+        <Grid>
+            <StackPanel Padding="{StaticResource PagePadding}" Spacing="12" MaxWidth="900" HorizontalAlignment="Stretch">
+                <Grid>
+                    <TextBlock Text="Аккаунты" Style="{StaticResource PageTitleStyle}" Margin="0" />
+                    <Button HorizontalAlignment="Right" Style="{StaticResource AccentButtonStyle}" Command="{x:Bind ViewModel.AddCommand}">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon Glyph="&#xE8FA;" FontSize="14" />
+                            <TextBlock Text="Добавить аккаунт" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
+
+                <ItemsControl ItemsSource="{x:Bind ViewModel.Items}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Spacing="8" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:AccountItemViewModel">
+                            <Border Style="{StaticResource CardStyle}">
+                                <Grid ColumnSpacing="14">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <PersonPicture Width="48" Height="48" VerticalAlignment="Top" DisplayName="{x:Bind Title}" />
+
+                                    <StackPanel Grid.Column="1" Spacing="4">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <TextBlock Text="{x:Bind Title}" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                            <Border Style="{StaticResource PillStyle}" Background="{ThemeResource AccentFillColorDefaultBrush}"
+                                                    Visibility="{x:Bind h:Bind.Visible(IsActive)}">
+                                                <TextBlock Text="Активный" Style="{StaticResource PillTextStyle}" Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" />
+                                            </Border>
+                                        </StackPanel>
+                                        <TextBlock Style="{StaticResource HintTextStyle}">
+                                            <Run Text="{x:Bind Login}" /> <Run Text="·" /> <Run Text="{x:Bind SessionText}" /> <Run Text="·" /> <Run Text="{x:Bind TotpText}" />
+                                        </TextBlock>
+                                        <TextBlock Text="{x:Bind LastLoginText}" Style="{StaticResource HintTextStyle}" />
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Top">
+                                        <Button Content="Сделать активным" Command="{x:Bind ActivateCommand}" Visibility="{x:Bind h:Bind.Collapsed(IsActive)}" />
+                                        <Button ToolTipService.ToolTip="Действия">
+                                            <FontIcon Glyph="&#xE712;" FontSize="14" />
+                                            <Button.Flyout>
+                                                <MenuFlyout Placement="BottomEdgeAlignedRight">
+                                                    <MenuFlyoutItem Text="Войти заново" Command="{x:Bind ReloginCommand}">
+                                                        <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE8D7;" /></MenuFlyoutItem.Icon>
+                                                    </MenuFlyoutItem>
+                                                    <MenuFlyoutSeparator />
+                                                    <MenuFlyoutItem Text="Автоматические коды 2FA" Command="{x:Bind SetSecretCommand}">
+                                                        <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE72E;" /></MenuFlyoutItem.Icon>
+                                                    </MenuFlyoutItem>
+                                                    <MenuFlyoutItem Text="Отключить автоматические коды" Command="{x:Bind ForgetSecretCommand}"
+                                                                    Visibility="{x:Bind h:Bind.Visible(HasTotpSecret)}">
+                                                        <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE785;" /></MenuFlyoutItem.Icon>
+                                                    </MenuFlyoutItem>
+                                                    <MenuFlyoutSeparator />
+                                                    <MenuFlyoutItem Text="Удалить аккаунт" Command="{x:Bind RemoveCommand}">
+                                                        <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE74D;" /></MenuFlyoutItem.Icon>
+                                                    </MenuFlyoutItem>
+                                                </MenuFlyout>
+                                            </Button.Flyout>
+                                        </Button>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <TextBlock Text="Аккаунтов пока нет" Style="{StaticResource HintTextStyle}" HorizontalAlignment="Center" Margin="0,24"
+                           Visibility="{x:Bind h:Bind.Visible(ViewModel.IsEmpty), Mode=OneWay}" />
+            </StackPanel>
+        </Grid>
+    </ScrollViewer>
+</nav:RoutedPage>

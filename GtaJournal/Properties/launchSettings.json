@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "GtaJournal (Package)": {
+      "commandName": "Project"
+    },
+    "GtaJournal (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

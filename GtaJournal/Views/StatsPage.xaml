@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<nav:RoutedPage
+    x:Class="GtaJournal.Views.StatsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:nav="using:GtaJournal.Core.Navigation"
+    xmlns:controls="using:GtaJournal.Controls"
+    xmlns:h="using:GtaJournal.Helpers">
+
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled">
+        <StackPanel Padding="24,16,24,24" Spacing="14">
+            <!-- Заголовок и выбор месяца -->
+            <Grid ColumnSpacing="8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="Статистика" Style="{StaticResource TitleTextBlockStyle}" VerticalAlignment="Center" />
+                <ComboBox Grid.Column="1" Width="200" VerticalAlignment="Center"
+                          ItemsSource="{x:Bind ViewModel.Months}"
+                          SelectedItem="{x:Bind ViewModel.SelectedMonth, Mode=TwoWay}" />
+                <Button Grid.Column="2" Width="36" Height="32" Padding="0" VerticalAlignment="Center"
+                        ToolTipService.ToolTip="Обновить" AutomationProperties.Name="Обновить" Command="{x:Bind ViewModel.LoadCommand}">
+                    <Grid>
+                        <FontIcon Glyph="&#xE72C;" FontSize="14" Visibility="{x:Bind h:Bind.Collapsed(ViewModel.IsBusy), Mode=OneWay}" />
+                        <ProgressRing Width="16" Height="16" IsActive="{x:Bind ViewModel.IsBusy, Mode=OneWay}" />
+                    </Grid>
+                </Button>
+            </Grid>
+
+            <!-- Сегодня -->
+            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1" CornerRadius="10" Padding="20,16">
+                <Grid ColumnSpacing="20">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid Width="72" Height="72">
+                        <ProgressRing Width="72" Height="72" IsIndeterminate="False" Value="{x:Bind ViewModel.DayProgress, Mode=OneWay}"
+                                      Background="{ThemeResource ControlStrongFillColorDisabledBrush}" />
+                        <FontIcon Glyph="&#xE73E;" FontSize="22" Foreground="{ThemeResource SystemFillColorSuccessBrush}"
+                                  Visibility="{x:Bind h:Bind.Visible(ViewModel.DayNormReached), Mode=OneWay}" />
+                        <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold"
+                                   Text="{x:Bind ProgressText(ViewModel.DayProgress), Mode=OneWay}"
+                                   Visibility="{x:Bind h:Bind.Collapsed(ViewModel.DayNormReached), Mode=OneWay}" />
+                    </Grid>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                        <TextBlock Text="{x:Bind ViewModel.DayTitle, Mode=OneWay}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                        <TextBlock Text="{x:Bind ViewModel.DayTimeText, Mode=OneWay}" Style="{StaticResource SubtitleTextBlockStyle}" />
+                        <TextBlock Text="{x:Bind ViewModel.NormText, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Итоги месяца -->
+            <controls:MonthSummaryPanel Summary="{x:Bind ViewModel.Summary, Mode=OneWay}" />
+
+            <!-- Календарь -->
+            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1" CornerRadius="10" Padding="16">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="{x:Bind ViewModel.MonthTitle, Mode=OneWay}" Style="{StaticResource BodyStrongTextBlockStyle}" Margin="4,0,0,0" />
+                    <controls:OnlineCalendar Calendar="{x:Bind ViewModel.Calendar, Mode=OneWay}" />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</nav:RoutedPage>
