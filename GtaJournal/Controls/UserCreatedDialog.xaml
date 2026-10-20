@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentDialog
+    x:Class="GtaJournal.Controls.UserCreatedDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Style="{StaticResource DefaultContentDialogStyle}"
+    PrimaryButtonText="Скопировать логин и пароль"
+    CloseButtonText="Готово"
+    DefaultButton="Primary"
+    PrimaryButtonClick="OnCopyAllClick">
+
+    <ContentDialog.Title>
+        <StackPanel Orientation="Horizontal" Spacing="12">
+            <Grid Width="32" Height="32">
+                <Ellipse Fill="{ThemeResource SystemFillColorSuccessBrush}" />
+                <FontIcon Glyph="&#xE73E;" FontSize="16" Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" />
+            </Grid>
+            <TextBlock Text="Пользователь создан" VerticalAlignment="Center" />
+        </StackPanel>
+    </ContentDialog.Title>
+
+    <StackPanel Spacing="12" MinWidth="420">
+        <TextBlock Style="{StaticResource HintTextStyle}" FontSize="14"
+                   Text="Передайте данные для входа пользователю. Пароль нигде больше не показывается — скопируйте его сейчас." />
+
+        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1" CornerRadius="{ThemeResource ControlCornerRadius}">
+            <StackPanel>
+                <StackPanel.Resources>
+                    <Style x:Key="RowStyle" TargetType="Grid">
+                        <Setter Property="Padding" Value="14,8,8,8" />
+                        <Setter Property="ColumnSpacing" Value="12" />
+                        <Setter Property="MinHeight" Value="48" />
+                    </Style>
+                    <Style x:Key="LabelStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyTextBlockStyle}">
+                        <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}" />
+                        <Setter Property="VerticalAlignment" Value="Center" />
+                    </Style>
+                    <Style x:Key="ValueStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyStrongTextBlockStyle}">
+                        <Setter Property="VerticalAlignment" Value="Center" />
+                        <Setter Property="IsTextSelectionEnabled" Value="True" />
+                        <Setter Property="TextWrapping" Value="Wrap" />
+                    </Style>
+                    <Style x:Key="CopyButtonStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
+                        <Setter Property="Width" Value="36" />
+                        <Setter Property="Height" Value="32" />
+                        <Setter Property="Padding" Value="0" />
+                        <Setter Property="VerticalAlignment" Value="Center" />
+                    </Style>
+                </StackPanel.Resources>
+
+                <Grid Style="{StaticResource RowStyle}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="110" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Логин" Style="{StaticResource LabelStyle}" />
+                    <TextBlock Grid.Column="1" Text="{x:Bind Login}" Style="{StaticResource ValueStyle}" />
+                    <Button Grid.Column="2" Style="{StaticResource CopyButtonStyle}" Tag="{x:Bind Login}" Click="OnCopyClick"
+                            ToolTipService.ToolTip="Скопировать логин" AutomationProperties.Name="Скопировать логин">
+                        <FontIcon Glyph="&#xE8C8;" FontSize="14" />
+                    </Button>
+                </Grid>
+                <Rectangle Height="1" Fill="{ThemeResource DividerStrokeColorDefaultBrush}" />
+
+                <Grid Style="{StaticResource RowStyle}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="110" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Пароль" Style="{StaticResource LabelStyle}" />
+                    <TextBlock Grid.Column="1" Text="{x:Bind Password}" Style="{StaticResource ValueStyle}" FontFamily="Consolas" />
+                    <Button Grid.Column="2" Style="{StaticResource CopyButtonStyle}" Tag="{x:Bind Password}" Click="OnCopyClick"
+                            ToolTipService.ToolTip="Скопировать пароль" AutomationProperties.Name="Скопировать пароль">
+                        <FontIcon Glyph="&#xE8C8;" FontSize="14" />
+                    </Button>
+                </Grid>
+                <Rectangle Height="1" Fill="{ThemeResource DividerStrokeColorDefaultBrush}" />
+
+                <Grid Style="{StaticResource RowStyle}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="110" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Счёт в банке" Style="{StaticResource LabelStyle}" />
+                    <TextBlock Grid.Column="1" Text="{x:Bind Bank}" Style="{StaticResource ValueStyle}" />
+                    <Button Grid.Column="2" Style="{StaticResource CopyButtonStyle}" Tag="{x:Bind Bank}" Click="OnCopyClick"
+                            ToolTipService.ToolTip="Скопировать счёт" AutomationProperties.Name="Скопировать счёт">
+                        <FontIcon Glyph="&#xE8C8;" FontSize="14" />
+                    </Button>
+                </Grid>
+                <Rectangle Height="1" Fill="{ThemeResource DividerStrokeColorDefaultBrush}" />
+
+                <Grid Style="{StaticResource RowStyle}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="110" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Ранг" Style="{StaticResource LabelStyle}" />
+                    <TextBlock Grid.Column="1" Text="{x:Bind Rank}" Style="{StaticResource ValueStyle}" />
+                </Grid>
+            </StackPanel>
+        </Border>
+
+        <TextBlock x:Name="CopiedText" Style="{StaticResource HintTextStyle}" Opacity="0"
+                   Text="Скопировано в буфер обмена" HorizontalAlignment="Center">
+            <TextBlock.OpacityTransition>
+                <ScalarTransition />
+            </TextBlock.OpacityTransition>
+        </TextBlock>
+    </StackPanel>
+</ContentDialog>

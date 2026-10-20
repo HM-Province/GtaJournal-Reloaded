@@ -4,7 +4,6 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GtaJournal.Core.Navigation;
 using GtaJournal.Models;
-using GtaJournal.Services;
 
 namespace GtaJournal.ViewModels;
 
@@ -32,6 +31,8 @@ public sealed partial class AddUserViewModel(ViewModelContext context) : ViewMod
 
     public bool UseTags => Context.Tags.Enabled;
     public string NicknamePlaceholder => UseTags ? "[ТЕГ] Ivan_Ivanov" : "Ivan_Ivanov";
+    public string NicknameDescription => UseTags ? "Тег подразделения и Имя_Фамилия латиницей" : "Имя_Фамилия латиницей";
+    public string RankDescription => $"От {MinRank} до {MaxRank}";
 
     public override async Task OnNavigatedToAsync(object? parameter)
     {
@@ -66,28 +67,35 @@ public sealed partial class AddUserViewModel(ViewModelContext context) : ViewMod
             VkLink.Trim(),
             ((int)Rank).ToString());
 
-        await RunAsync(async () =>
+        var created = await RunAsync(async () =>
         {
             var result = await Client.AddUserAsync(user);
             if (!result.IsSuccess)
-            {
-                Messages.Error("Ошибка", result.Text ?? "Неизвестная ошибка");
-                return;
-            }
-
-            DialogService.CopyToClipboard($"Логин: {user.Login}\nПароль: {user.Password}");
-            Messages.Success("Пользователь добавлен", "Данные для входа скопированы в буфер обмена");
-
-            if (stayOnPage)
-            {
-                Nickname = Password = Bank = VkLink = "";
-                Rank = 1;
-            }
-            else
-            {
-                Navigation.Navigate(Routes.Dashboard, clearHistory: true);
-            }
+                throw new InvalidOperationException(result.Text ?? "Неизвестная ошибка");
         }, "Не удалось добавить пользователя");
+        if (!created) return;
+
+        await Dialogs.ShowUserCreatedAsync(user);
+
+        if (stayOnPage)
+        {
+            Nickname = Password = Bank = VkLink = "";
+            Rank = 1;
+        }
+        else
+        {
+            Navigation.Navigate(Routes.Dashboard, clearHistory: true);
+        }
+    }
+
+    [RelayCommand]
+    private void GeneratePassword() => Password = RandomPassword(10);
+
+    [RelayCommand]
+    private void Cancel()
+    {
+        if (Navigation.CanGoBack) Navigation.GoBack();
+        else Navigation.Navigate(Routes.Dashboard, clearHistory: true);
     }
 
     private static string RandomPassword(int length) =>

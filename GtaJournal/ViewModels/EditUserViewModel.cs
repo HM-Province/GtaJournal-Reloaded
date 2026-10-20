@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GtaJournal.Core.Navigation;
 using GtaJournal.Models;
+using Microsoft.UI.Xaml.Media;
 
 namespace GtaJournal.ViewModels;
 
@@ -13,6 +14,11 @@ public sealed partial class EditUserViewModel(ViewModelContext context) : ViewMo
     private static readonly JournalStatus[] StatusValues = [JournalStatus.Offline, JournalStatus.Online, JournalStatus.Afk];
 
     [ObservableProperty] public partial bool IsLoaded { get; set; }
+
+    // Шапка страницы
+    [ObservableProperty] public partial string DisplayName { get; set; } = "Загрузка…";
+    [ObservableProperty] public partial string DisplayDetails { get; set; } = "";
+    [ObservableProperty] public partial ImageSource? Avatar { get; set; }
 
     [ObservableProperty, NotifyCanExecuteChangedFor(nameof(SaveCommand))]
     public partial string Nickname { get; set; } = "";
@@ -36,6 +42,8 @@ public sealed partial class EditUserViewModel(ViewModelContext context) : ViewMo
 
     public bool UseTags => Context.Tags.Enabled;
     public string NicknamePlaceholder => UseTags ? "[ТЕГ] Ivan_Ivanov" : "Ivan_Ivanov";
+    public string NicknameDescription => UseTags ? "Тег подразделения и Имя_Фамилия латиницей" : "Имя_Фамилия латиницей";
+    public string RankDescription => $"От {MinRank} до {MaxRank}";
 
     public override async Task OnNavigatedToAsync(object? parameter)
     {
@@ -61,10 +69,15 @@ public sealed partial class EditUserViewModel(ViewModelContext context) : ViewMo
             Rank = double.TryParse(user.Role, out var r) ? r : 1;
             IsAdmin = user.IsAdmin;
             StatusIndex = Array.IndexOf(StatusValues, user.Status);
+            DisplayName = user.Login;
+            DisplayDetails = $"{user.Status.Title()} · ранг {user.Role}" + (user.IsAdmin ? " · администратор" : "");
             IsLoaded = true;
+            _ = LoadAvatarAsync(user.Login);
             SaveCommand.NotifyCanExecuteChanged();
         }, "Не удалось загрузить пользователя");
     }
+
+    private async Task LoadAvatarAsync(string login) => Avatar = await Context.Avatars.LoadForAsync(login);
 
     private bool CanSave() =>
         IsLoaded
@@ -92,5 +105,12 @@ public sealed partial class EditUserViewModel(ViewModelContext context) : ViewMo
                 Messages.Error("Ошибка", result.Text ?? "Неизвестная ошибка");
             }
         }, "Не удалось сохранить пользователя");
+    }
+
+    [RelayCommand]
+    private void Cancel()
+    {
+        if (Navigation.CanGoBack) Navigation.GoBack();
+        else Navigation.Navigate(Routes.Dashboard, clearHistory: true);
     }
 }

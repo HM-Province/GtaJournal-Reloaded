@@ -10,12 +10,14 @@ using Microsoft.UI.Xaml.Media.Imaging;
 namespace GtaJournal.ViewModels;
 
 public sealed partial class AccountItemViewModel(Account account, bool isActive, AccountsViewModel owner)
+    : CommunityToolkit.Mvvm.ComponentModel.ObservableObject
 {
     public Account Model { get; } = account;
     public string Title => Model.Title;
     public string Login => Model.Login;
 
     public bool IsActive { get; } = isActive;
+    [CommunityToolkit.Mvvm.ComponentModel.ObservableProperty] public partial ImageSource? Avatar { get; set; }
     public bool HasSession => !string.IsNullOrEmpty(Model.CookiesJson) && Model.CookiesJson != "[]";
     public bool HasTotpSecret => Model.HasTotpSecret;
     public string SessionText => HasSession ? "Вход выполнен" : "Нужен вход";
@@ -48,9 +50,16 @@ public sealed partial class AccountsViewModel(ViewModelContext context) : ViewMo
     {
         Items.Clear();
         foreach (var account in Accounts.Accounts)
-            Items.Add(new AccountItemViewModel(account, account.Id == Accounts.ActiveAccount?.Id, this));
+        {
+            var item = new AccountItemViewModel(account, account.Id == Accounts.ActiveAccount?.Id, this);
+            Items.Add(item);
+            _ = LoadAvatarAsync(item);
+        }
         IsEmpty = Items.Count == 0;
     }
+
+    private async Task LoadAvatarAsync(AccountItemViewModel item) =>
+        item.Avatar = await Context.Avatars.LoadAsync(item.Model.AvatarUrl ?? Context.Avatars.UrlFor(item.Model.DisplayName));
 
     [RelayCommand]
     private void Add() => Navigation.Navigate(Routes.Login, new LoginRequest());

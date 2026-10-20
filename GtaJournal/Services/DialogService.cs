@@ -1,3 +1,5 @@
+using GtaJournal.Controls;
+using GtaJournal.Models;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Windows.ApplicationModel.DataTransfer;
@@ -46,6 +48,14 @@ public sealed class DialogService
             DefaultButton = ContentDialogButton.Primary,
         };
         return await dialog.ShowAsync() == ContentDialogResult.Primary ? box.Text : null;
+    }
+
+    /// <summary>Окно с данными нового пользователя и кнопками копирования.</summary>
+    public async Task ShowUserCreatedAsync(NewUser user)
+    {
+        if (_xamlRoot is null) return;
+        var dialog = new UserCreatedDialog(user) { XamlRoot = _xamlRoot, RequestedTheme = RootTheme };
+        await dialog.ShowAsync();
     }
 
     /// <summary>

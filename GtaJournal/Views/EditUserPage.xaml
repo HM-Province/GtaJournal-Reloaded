@@ -3,44 +3,79 @@
     x:Class="GtaJournal.Views.EditUserPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:nav="using:GtaJournal.Core.Navigation">
+    xmlns:nav="using:GtaJournal.Core.Navigation"
+    xmlns:c="using:GtaJournal.Controls">
 
     <ScrollViewer HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled">
         <Grid>
-            <StackPanel Padding="{StaticResource PagePadding}" Spacing="12" MaxWidth="640" HorizontalAlignment="Stretch">
-                <TextBlock Text="Изменить пользователя" Style="{StaticResource PageTitleStyle}" Margin="0" />
+            <StackPanel Padding="{StaticResource PagePadding}" Spacing="4" MaxWidth="820" HorizontalAlignment="Stretch">
+                <!-- Шапка: как карточка профиля в «Параметрах» -->
+                <Grid ColumnSpacing="16" Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <PersonPicture Width="64" Height="64" ProfilePicture="{x:Bind ViewModel.Avatar, Mode=OneWay}"
+                                   DisplayName="{x:Bind ViewModel.DisplayName, Mode=OneWay}" />
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="{x:Bind ViewModel.DisplayName, Mode=OneWay}" Style="{StaticResource TitleTextBlockStyle}"
+                                   TextTrimming="CharacterEllipsis" IsTextSelectionEnabled="True" />
+                        <TextBlock Text="{x:Bind ViewModel.DisplayDetails, Mode=OneWay}" Style="{StaticResource BodyTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
+                </Grid>
                 <ProgressBar IsIndeterminate="True" Visibility="{x:Bind ViewModel.IsBusy, Mode=OneWay}" />
 
-                <Border Style="{StaticResource CardStyle}" IsHitTestVisible="{x:Bind ViewModel.IsLoaded, Mode=OneWay}">
-                    <StackPanel Spacing="14">
-                        <RadioButtons Header="Статус" MaxColumns="3" ItemsSource="{x:Bind ViewModel.StatusOptions}"
-                                      SelectedIndex="{x:Bind ViewModel.StatusIndex, Mode=TwoWay}" />
-                        <TextBox Header="Никнейм" PlaceholderText="{x:Bind ViewModel.NicknamePlaceholder}"
+                <StackPanel Spacing="4" IsHitTestVisible="{x:Bind ViewModel.IsLoaded, Mode=OneWay}">
+                    <TextBlock Text="Журнал" Style="{StaticResource SettingsGroupHeaderStyle}" />
+                    <c:SettingsCard Glyph="&#xE7E8;" Header="Статус" Description="Текущий статус пользователя в журнале">
+                        <ComboBox MinWidth="160" ItemsSource="{x:Bind ViewModel.StatusOptions}" AutomationProperties.Name="Статус"
+                                  SelectedIndex="{x:Bind ViewModel.StatusIndex, Mode=TwoWay}" />
+                    </c:SettingsCard>
+
+                    <TextBlock Text="Учётная запись" Style="{StaticResource SettingsGroupHeaderStyle}" />
+                    <c:SettingsCard Glyph="&#xE77B;" Header="Никнейм" Description="{x:Bind ViewModel.NicknameDescription}">
+                        <TextBox Width="{StaticResource SettingsCardInputWidth}" PlaceholderText="{x:Bind ViewModel.NicknamePlaceholder}"
+                                 AutomationProperties.Name="Никнейм"
                                  Text="{x:Bind ViewModel.Nickname, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                        <TextBox Header="Пароль" PlaceholderText="Оставьте пустым, чтобы не менять"
+                    </c:SettingsCard>
+                    <c:SettingsCard Glyph="&#xE8D7;" Header="Новый пароль" Description="Оставьте пустым, чтобы не менять">
+                        <TextBox Width="{StaticResource SettingsCardInputWidth}" PlaceholderText="Не менять" FontFamily="Consolas"
+                                 AutomationProperties.Name="Новый пароль"
                                  Text="{x:Bind ViewModel.Password, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                        <TextBox Header="Счёт в банке" PlaceholderText="123456"
+                    </c:SettingsCard>
+
+                    <TextBlock Text="Сведения" Style="{StaticResource SettingsGroupHeaderStyle}" />
+                    <c:SettingsCard Glyph="&#xE8C7;" Header="Счёт в банке" Description="Номер счёта для выплат">
+                        <TextBox Width="{StaticResource SettingsCardInputWidth}" PlaceholderText="123456" AutomationProperties.Name="Счёт в банке"
                                  Text="{x:Bind ViewModel.Bank, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                        <NumberBox Header="Ранг" Minimum="{x:Bind ViewModel.MinRankValue}" Maximum="{x:Bind ViewModel.MaxRankValue}" SpinButtonPlacementMode="Inline" Width="200" HorizontalAlignment="Left"
+                    </c:SettingsCard>
+                    <c:SettingsCard Glyph="&#xE734;" Header="Ранг" Description="{x:Bind ViewModel.RankDescription}">
+                        <NumberBox Width="160" Minimum="{x:Bind ViewModel.MinRankValue}" Maximum="{x:Bind ViewModel.MaxRankValue}"
+                                   SpinButtonPlacementMode="Inline" AutomationProperties.Name="Ранг"
                                    Value="{x:Bind ViewModel.Rank, Mode=TwoWay}" />
+                    </c:SettingsCard>
 
-                        <StackPanel>
-                            <ToggleSwitch Header="Администратор" IsOn="{x:Bind ViewModel.IsAdmin, Mode=TwoWay}" />
-                            <TextBlock Style="{StaticResource HintTextStyle}" Text="Может управлять пользователями. Выдавайте с осторожностью!" />
-                        </StackPanel>
-                        <StackPanel>
-                            <ToggleSwitch Header="Обновить аватар" IsOn="{x:Bind ViewModel.UpdateAvatar, Mode=TwoWay}" />
-                            <TextBlock Style="{StaticResource HintTextStyle}" Text="Если пользователь обновил аватар в ВК." />
-                        </StackPanel>
-                    </StackPanel>
-                </Border>
+                    <TextBlock Text="Права и профиль" Style="{StaticResource SettingsGroupHeaderStyle}" />
+                    <c:SettingsCard Glyph="&#xE7EF;" Header="Администратор" Description="Может управлять пользователями. Выдавайте с осторожностью!">
+                        <ToggleSwitch IsOn="{x:Bind ViewModel.IsAdmin, Mode=TwoWay}" OnContent="Вкл." OffContent="Откл." MinWidth="0"
+                                      AutomationProperties.Name="Администратор" />
+                    </c:SettingsCard>
+                    <c:SettingsCard Glyph="&#xE8B8;" Header="Обновить аватар" Description="Если пользователь сменил аватар во ВКонтакте">
+                        <ToggleSwitch IsOn="{x:Bind ViewModel.UpdateAvatar, Mode=TwoWay}" OnContent="Вкл." OffContent="Откл." MinWidth="0"
+                                      AutomationProperties.Name="Обновить аватар" />
+                    </c:SettingsCard>
+                </StackPanel>
 
-                <Button Style="{StaticResource AccentButtonStyle}" Command="{x:Bind ViewModel.SaveCommand}">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <FontIcon Glyph="&#xE74E;" FontSize="14" />
-                        <TextBlock Text="Сохранить изменения" />
-                    </StackPanel>
-                </Button>
+                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,24,0,0">
+                    <Button Style="{StaticResource AccentButtonStyle}" MinWidth="120" Command="{x:Bind ViewModel.SaveCommand}">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon Glyph="&#xE74E;" FontSize="14" />
+                            <TextBlock Text="Сохранить" />
+                        </StackPanel>
+                    </Button>
+                    <Button Content="Отмена" MinWidth="100" Command="{x:Bind ViewModel.CancelCommand}" />
+                </StackPanel>
             </StackPanel>
         </Grid>
     </ScrollViewer>

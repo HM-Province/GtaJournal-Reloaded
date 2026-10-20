@@ -79,37 +79,14 @@ public sealed partial class ShellPage : RoutedPage
         NavView.SelectedItem = _items.GetValueOrDefault(key);
     }
 
-    private void OnAccountButtonClick(object sender, RoutedEventArgs e)
+    private void OnAccountFlyoutOpening(object sender, object e) => ViewModel.RefreshMenuAccounts();
+
+    private async void OnAccountItemClick(object sender, RoutedEventArgs e)
     {
-        var flyout = new MenuFlyout { Placement = Microsoft.UI.Xaml.Controls.Primitives.FlyoutPlacementMode.TopEdgeAlignedLeft };
-
-        foreach (var account in ViewModel.AllAccounts)
-        {
-            var id = account.Id;
-            var item = new ToggleMenuFlyoutItem
-            {
-                Text = account.Title == account.Login ? account.Login : $"{account.Title} ({account.Login})",
-                IsChecked = id == ViewModel.ActiveAccountId,
-            };
-            item.Click += async (_, _) =>
-            {
-                if (id != ViewModel.ActiveAccountId) await ViewModel.SwitchAccountAsync(id);
-                else item.IsChecked = true;
-            };
-            flyout.Items.Add(item);
-        }
-
-        if (ViewModel.AllAccounts.Count > 0)
-            flyout.Items.Add(new MenuFlyoutSeparator());
-
-        flyout.Items.Add(new MenuFlyoutItem { Text = "Добавить аккаунт", Icon = new FontIcon { Glyph = "" }, Command = ViewModel.AddAccountCommand });
-        flyout.Items.Add(new MenuFlyoutItem { Text = "Управление аккаунтами", Icon = new FontIcon { Glyph = "" }, Command = ViewModel.ManageAccountsCommand });
-        if (ViewModel.ActiveAccountId is not null)
-        {
-            flyout.Items.Add(new MenuFlyoutSeparator());
-            flyout.Items.Add(new MenuFlyoutItem { Text = "Выйти из аккаунта", Icon = new FontIcon { Glyph = "\uE7E8" }, Command = ViewModel.LogoutCommand });
-        }
-
-        flyout.ShowAt(AccountButton);
+        AccountFlyout.Hide();
+        if (sender is FrameworkElement { Tag: AccountMenuItem item } && item.Id != ViewModel.ActiveAccountId)
+            await ViewModel.SwitchAccountAsync(item.Id);
     }
+
+    private void OnAccountMenuActionClick(object sender, RoutedEventArgs e) => AccountFlyout.Hide();
 }

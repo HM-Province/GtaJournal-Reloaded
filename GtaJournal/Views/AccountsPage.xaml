@@ -35,7 +35,7 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <PersonPicture Width="48" Height="48" VerticalAlignment="Top" DisplayName="{x:Bind Title}" />
+                                    <PersonPicture Width="48" Height="48" VerticalAlignment="Top" DisplayName="{x:Bind Title}" ProfilePicture="{x:Bind Avatar, Mode=OneWay}" />
 
                                     <StackPanel Grid.Column="1" Spacing="4">
                                         <StackPanel Orientation="Horizontal" Spacing="8">

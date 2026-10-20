@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -8,6 +9,18 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 
 namespace GtaJournal.ViewModels;
+
+/// <summary>Аккаунт в меню переключения.</summary>
+public sealed partial class AccountMenuItem(Account account, bool isActive) : ObservableObject
+{
+    public long Id { get; } = account.Id;
+    public string Title { get; } = account.Title;
+    public string Login { get; } = account.Login;
+    public bool IsActive { get; } = isActive;
+    public bool ShowLogin => Title != Login;
+
+    [ObservableProperty] public partial ImageSource? Avatar { get; set; }
+}
 
 public sealed partial class ShellViewModel : ViewModelBase
 {
@@ -23,7 +36,7 @@ public sealed partial class ShellViewModel : ViewModelBase
 
     private async Task LoadAvatarAsync()
     {
-        var url = Accounts.Profile?.AvatarUrl;
+        var url = Accounts.Profile?.AvatarUrl ?? Accounts.ActiveAccount?.AvatarUrl;
         if (url == _avatarUrl) return;
         _avatarUrl = url;
         Avatar = await Context.Avatars.LoadAsync(url);
@@ -46,8 +59,27 @@ public sealed partial class ShellViewModel : ViewModelBase
         }
     }
 
-    public IReadOnlyList<Models.Account> AllAccounts => Accounts.Accounts;
+    public ObservableCollection<AccountMenuItem> MenuAccounts { get; } = [];
     public long? ActiveAccountId => Accounts.ActiveAccount?.Id;
+    public bool HasActiveAccount => Accounts.ActiveAccount is not null;
+    public bool HasAccounts => MenuAccounts.Count > 0;
+
+    /// <summary>Пересобирает список аккаунтов перед открытием меню.</summary>
+    public void RefreshMenuAccounts()
+    {
+        MenuAccounts.Clear();
+        foreach (var account in Accounts.Accounts)
+        {
+            var item = new AccountMenuItem(account, account.Id == ActiveAccountId);
+            MenuAccounts.Add(item);
+            _ = LoadMenuAvatarAsync(item, account);
+        }
+        OnPropertyChanged(nameof(HasActiveAccount));
+        OnPropertyChanged(nameof(HasAccounts));
+    }
+
+    private async Task LoadMenuAvatarAsync(AccountMenuItem item, Account account) =>
+        item.Avatar = await Context.Avatars.LoadAsync(account.AvatarUrl ?? Context.Avatars.UrlFor(account.DisplayName));
 
     public async Task SwitchAccountAsync(long id)
     {

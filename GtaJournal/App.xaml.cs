@@ -102,6 +102,7 @@ public partial class App : Application
         services.AddSingleton<AccountRepository>();
         services.AddSingleton<SettingsRepository>();
         services.AddSingleton<UnitTagRepository>();
+        services.AddSingleton<UserAvatarRepository>();
 
         // Сервисы
         services.AddSingleton<SettingsService>();
