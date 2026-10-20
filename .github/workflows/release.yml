@@ -6,12 +6,13 @@ on:
   push:
     tags: ['v*']
 
-permissions:
-  contents: write
-
 jobs:
-  release:
+  # Архитектуры собираются параллельно, каждая в своей машине.
+  build:
     runs-on: windows-latest
+    strategy:
+      matrix:
+        arch: [x64, x86, arm64]
     steps:
       - uses: actions/checkout@v4
 
@@ -26,13 +27,33 @@ jobs:
             choco install innosetup -y --no-progress
           }
 
-      - name: Build installers
+      - name: Build installer
         shell: pwsh
-        run: ./installer/build.ps1 -Version $env:GITHUB_REF_NAME.TrimStart('v')
+        run: ./installer/build.ps1 -Version $env:GITHUB_REF_NAME.TrimStart('v') -Arch ${{ matrix.arch }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installer-${{ matrix.arch }}
+          path: artifacts/installer/*.exe
+          if-no-files-found: error
+          retention-days: 1
+
+  # Релиз публикуется, только когда собрались все архитектуры.
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: installer-*
+          path: installers
+          merge-multiple: true
 
       # Список изменений GitHub собирает сам из pull request'ов, влитых с прошлого релиза.
       # Этот же текст приложение показывает в окне обновления.
       - uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/installer/*.exe
+          files: installers/*.exe
           generate_release_notes: true
