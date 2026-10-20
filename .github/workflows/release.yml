@@ -30,6 +30,8 @@ jobs:
         shell: pwsh
         run: ./installer/build.ps1 -Version $env:GITHUB_REF_NAME.TrimStart('v')
 
+      # Список изменений GitHub собирает сам из pull request'ов, влитых с прошлого релиза.
+      # Этот же текст приложение показывает в окне обновления.
       - uses: softprops/action-gh-release@v2
         with:
           files: artifacts/installer/*.exe
