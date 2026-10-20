@@ -4,6 +4,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:nav="using:GtaJournal.Core.Navigation"
+    xmlns:vm="using:GtaJournal.ViewModels"
     xmlns:h="using:GtaJournal.Helpers">
 
     <NavigationView
@@ -29,8 +30,91 @@
                 Background="Transparent"
                 BorderThickness="0"
                 ToolTipService.ToolTip="Аккаунт"
-                AutomationProperties.Name="Аккаунт"
-                Click="OnAccountButtonClick">
+                AutomationProperties.Name="Аккаунт">
+                <Button.Flyout>
+                    <Flyout x:Name="AccountFlyout" Placement="TopEdgeAlignedLeft" Opening="OnAccountFlyoutOpening">
+                        <Flyout.FlyoutPresenterStyle>
+                            <Style TargetType="FlyoutPresenter" BasedOn="{StaticResource DefaultFlyoutPresenterStyle}">
+                                <Setter Property="Padding" Value="4" />
+                                <Setter Property="MinWidth" Value="300" />
+                                <Setter Property="MaxWidth" Value="380" />
+                            </Style>
+                        </Flyout.FlyoutPresenterStyle>
+
+                        <StackPanel Spacing="2">
+                            <StackPanel.Resources>
+                                <ResourceDictionary>
+                                    <ResourceDictionary.MergedDictionaries>
+                                        <ResourceDictionary Source="ms-appx:///Styles/SubtleButton.xaml" />
+                                    </ResourceDictionary.MergedDictionaries>
+                                    <Style x:Key="AccountMenuButtonStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
+                                        <Setter Property="HorizontalAlignment" Value="Stretch" />
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                        <Setter Property="Padding" Value="10,7" />
+                                    </Style>
+                                </ResourceDictionary>
+                            </StackPanel.Resources>
+
+                            <TextBlock Text="Аккаунты" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                       Margin="10,6,10,4" Visibility="{x:Bind h:Bind.Visible(ViewModel.HasAccounts), Mode=OneWay}" />
+
+                            <ItemsRepeater ItemsSource="{x:Bind ViewModel.MenuAccounts}">
+                                <ItemsRepeater.Layout>
+                                    <StackLayout Spacing="2" />
+                                </ItemsRepeater.Layout>
+                                <ItemsRepeater.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:AccountMenuItem">
+                                        <Button Style="{StaticResource AccountMenuButtonStyle}" Tag="{x:Bind}" Click="OnAccountItemClick"
+                                                AutomationProperties.Name="{x:Bind Title}">
+                                            <Grid ColumnSpacing="12">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <PersonPicture Width="36" Height="36" ProfilePicture="{x:Bind Avatar, Mode=OneWay}" DisplayName="{x:Bind Title}" />
+                                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                    <TextBlock Text="{x:Bind Title}" Style="{StaticResource BodyStrongTextBlockStyle}" TextTrimming="CharacterEllipsis" />
+                                                    <TextBlock Text="{x:Bind Login}" Style="{StaticResource HintTextStyle}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
+                                                               Visibility="{x:Bind h:Bind.Visible(ShowLogin)}" />
+                                                </StackPanel>
+                                                <FontIcon Grid.Column="2" Glyph="&#xE73E;" FontSize="14" VerticalAlignment="Center"
+                                                          Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                                          Visibility="{x:Bind h:Bind.Visible(IsActive)}" />
+                                            </Grid>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsRepeater.ItemTemplate>
+                            </ItemsRepeater>
+
+                            <Rectangle Height="1" Margin="-4,4" Fill="{ThemeResource DividerStrokeColorDefaultBrush}"
+                                       Visibility="{x:Bind h:Bind.Visible(ViewModel.HasAccounts), Mode=OneWay}" />
+
+                            <Button Style="{StaticResource AccountMenuButtonStyle}" Command="{x:Bind ViewModel.AddAccountCommand}" Click="OnAccountMenuActionClick">
+                                <StackPanel Orientation="Horizontal" Spacing="12">
+                                    <FontIcon Glyph="&#xE8FA;" FontSize="16" />
+                                    <TextBlock Text="Добавить аккаунт" />
+                                </StackPanel>
+                            </Button>
+                            <Button Style="{StaticResource AccountMenuButtonStyle}" Command="{x:Bind ViewModel.ManageAccountsCommand}" Click="OnAccountMenuActionClick">
+                                <StackPanel Orientation="Horizontal" Spacing="12">
+                                    <FontIcon Glyph="&#xE716;" FontSize="16" />
+                                    <TextBlock Text="Управление аккаунтами" />
+                                </StackPanel>
+                            </Button>
+
+                            <StackPanel Spacing="2" Visibility="{x:Bind h:Bind.Visible(ViewModel.HasActiveAccount), Mode=OneWay}">
+                                <Rectangle Height="1" Margin="-4,4" Fill="{ThemeResource DividerStrokeColorDefaultBrush}" />
+                                <Button Style="{StaticResource AccountMenuButtonStyle}" Command="{x:Bind ViewModel.LogoutCommand}" Click="OnAccountMenuActionClick">
+                                    <StackPanel Orientation="Horizontal" Spacing="12">
+                                        <FontIcon Glyph="&#xE7E8;" FontSize="16" />
+                                        <TextBlock Text="Выйти из аккаунта" />
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
+                    </Flyout>
+                </Button.Flyout>
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />

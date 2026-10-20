@@ -112,6 +112,9 @@ public sealed partial class DashboardViewModel : ViewModelBase, IUserActions
         {
             await Accounts.SetProfileAsync(data.Profile);
             IsLoaded = true;
+            await Context.Avatars.RememberAsync(data.Online.Concat(data.Afk).Concat(data.Offline)
+                .Select(u => (u.Username, u.AvatarUrl))
+                .Append((data.Profile.Username, data.Profile.AvatarUrl)));
             // Как и раньше: если игра закрыта, а статус не «Оффлайн» — снимаем.
             await _status.CheckAsync();
         });

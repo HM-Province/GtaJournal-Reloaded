@@ -9,10 +9,24 @@ using Windows.UI;
 
 namespace GtaJournal.ViewModels;
 
-public sealed record TopRow(int Place, string Username, string? Tag, string Time, string LastUpdate, Brush PlaceBrush, Brush PlaceForeground, Brush TagBrush)
+public sealed partial class TopRow(int place, string username, string? tag, string time, string lastUpdate, Brush placeBrush, Brush placeForeground, Brush tagBrush)
+    : ObservableObject
 {
+    public int Place { get; } = place;
+    public string Username { get; } = username;
+    public string? Tag { get; } = tag;
+    public string Time { get; } = time;
+    public string LastUpdate { get; } = lastUpdate;
+    public Brush PlaceBrush { get; } = placeBrush;
+    public Brush PlaceForeground { get; } = placeForeground;
+    public Brush TagBrush { get; } = tagBrush;
+
     public string PlaceText => Place.ToString();
     public bool HasTag => Tag is not null;
+
+    [ObservableProperty] public partial ImageSource? Avatar { get; set; }
+
+    public async Task LoadAvatarAsync(AvatarService avatars) => Avatar = await avatars.LoadForAsync(Username);
 }
 
 public sealed partial class TopViewModel(ViewModelContext context) : ViewModelBase(context)
@@ -37,7 +51,7 @@ public sealed partial class TopViewModel(ViewModelContext context) : ViewModelBa
         {
             var unit = Context.Tags.Match(entry.Tag);
             var medal = entry.Place switch { 1 => Gold, 2 => Silver, 3 => Bronze, _ => (Color?)null };
-            Rows.Add(new TopRow(
+            var row = new TopRow(
                 entry.Place,
                 entry.Username,
                 unit is null ? null : entry.Tag,
@@ -45,7 +59,9 @@ public sealed partial class TopViewModel(ViewModelContext context) : ViewModelBa
                 entry.LastUpdate,
                 medal is { } m ? new SolidColorBrush(m) : (Brush)Microsoft.UI.Xaml.Application.Current.Resources["SubtleFillColorSecondaryBrush"],
                 medal is not null ? new SolidColorBrush(Colors.White) : (Brush)Microsoft.UI.Xaml.Application.Current.Resources["TextFillColorPrimaryBrush"],
-                new SolidColorBrush(unit?.Color ?? Colors.Transparent)));
+                new SolidColorBrush(unit?.Color ?? Colors.Transparent));
+            Rows.Add(row);
+            _ = row.LoadAvatarAsync(Context.Avatars);
         }
         IsEmpty = Rows.Count == 0;
     }

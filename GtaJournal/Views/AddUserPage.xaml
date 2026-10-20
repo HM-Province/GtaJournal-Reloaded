@@ -3,48 +3,77 @@
     x:Class="GtaJournal.Views.AddUserPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:nav="using:GtaJournal.Core.Navigation">
+    xmlns:nav="using:GtaJournal.Core.Navigation"
+    xmlns:c="using:GtaJournal.Controls">
 
     <ScrollViewer HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled">
         <Grid>
-            <StackPanel Padding="{StaticResource PagePadding}" Spacing="12" MaxWidth="640" HorizontalAlignment="Stretch">
-                <TextBlock Text="Добавить пользователя" Style="{StaticResource PageTitleStyle}" Margin="0" />
+            <StackPanel Padding="{StaticResource PagePadding}" Spacing="4" MaxWidth="820" HorizontalAlignment="Stretch">
+                <!-- Шапка: как карточка профиля в «Параметрах» -->
+                <Grid ColumnSpacing="16" Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid Width="64" Height="64">
+                        <Ellipse Fill="{ThemeResource AccentFillColorDefaultBrush}" />
+                        <FontIcon Glyph="&#xE8FA;" FontSize="26" Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" />
+                    </Grid>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="Новый пользователь" Style="{StaticResource TitleTextBlockStyle}" />
+                        <TextBlock Text="Заполните данные — после создания появится окно с логином и паролем"
+                                   Style="{StaticResource BodyTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
+                </Grid>
 
-                <Border Style="{StaticResource CardStyle}">
-                    <StackPanel Spacing="14">
-                        <TextBox Header="Никнейм" PlaceholderText="{x:Bind ViewModel.NicknamePlaceholder}"
-                                 Text="{x:Bind ViewModel.Nickname, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                        <TextBox Header="Пароль" PlaceholderText="Оставьте пустым для случайного"
+                <TextBlock Text="Учётная запись" Style="{StaticResource SettingsGroupHeaderStyle}" />
+                <c:SettingsCard Glyph="&#xE77B;" Header="Никнейм" Description="{x:Bind ViewModel.NicknameDescription}">
+                    <TextBox Width="{StaticResource SettingsCardInputWidth}" PlaceholderText="{x:Bind ViewModel.NicknamePlaceholder}"
+                             AutomationProperties.Name="Никнейм"
+                             Text="{x:Bind ViewModel.Nickname, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                </c:SettingsCard>
+                <c:SettingsCard Glyph="&#xE8D7;" Header="Пароль" Description="Оставьте пустым — будет сгенерирован случайный">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBox Width="236" PlaceholderText="Случайный" FontFamily="Consolas" AutomationProperties.Name="Пароль"
                                  Text="{x:Bind ViewModel.Password, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                        <TextBox Header="Счёт в банке" PlaceholderText="123456"
-                                 Text="{x:Bind ViewModel.Bank, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                        <TextBox Header="Ссылка на ВК" PlaceholderText="https://vk.com/id1"
-                                 Text="{x:Bind ViewModel.VkLink, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                        <NumberBox Header="Ранг" Minimum="{x:Bind ViewModel.MinRankValue}" Maximum="{x:Bind ViewModel.MaxRankValue}" SpinButtonPlacementMode="Inline" Width="200" HorizontalAlignment="Left"
-                                   Value="{x:Bind ViewModel.Rank, Mode=TwoWay}" />
+                        <Button Width="36" Height="32" Padding="0" Command="{x:Bind ViewModel.GeneratePasswordCommand}"
+                                ToolTipService.ToolTip="Сгенерировать пароль" AutomationProperties.Name="Сгенерировать пароль">
+                            <FontIcon Glyph="&#xE895;" FontSize="14" />
+                        </Button>
                     </StackPanel>
-                </Border>
+                </c:SettingsCard>
 
-                <Border Style="{StaticResource CardStyle}">
-                    <StackPanel Spacing="10">
-                        <TextBlock Style="{StaticResource HintTextStyle}" Text="Логин и пароль нового пользователя будут скопированы в буфер обмена." />
+                <TextBlock Text="Сведения" Style="{StaticResource SettingsGroupHeaderStyle}" />
+                <c:SettingsCard Glyph="&#xE8C7;" Header="Счёт в банке" Description="Номер счёта для выплат">
+                    <TextBox Width="{StaticResource SettingsCardInputWidth}" PlaceholderText="123456" AutomationProperties.Name="Счёт в банке"
+                             Text="{x:Bind ViewModel.Bank, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                </c:SettingsCard>
+                <c:SettingsCard Glyph="&#xE71B;" Header="Страница ВКонтакте" Description="Отсюда журнал возьмёт аватарку">
+                    <TextBox Width="{StaticResource SettingsCardInputWidth}" PlaceholderText="https://vk.com/id1" AutomationProperties.Name="Страница ВКонтакте"
+                             Text="{x:Bind ViewModel.VkLink, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                </c:SettingsCard>
+                <c:SettingsCard Glyph="&#xE734;" Header="Ранг" Description="{x:Bind ViewModel.RankDescription}">
+                    <NumberBox Width="160" Minimum="{x:Bind ViewModel.MinRankValue}" Maximum="{x:Bind ViewModel.MaxRankValue}"
+                               SpinButtonPlacementMode="Inline" AutomationProperties.Name="Ранг"
+                               Value="{x:Bind ViewModel.Rank, Mode=TwoWay}" />
+                </c:SettingsCard>
+
+                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,24,0,0">
+                    <Button Style="{StaticResource AccentButtonStyle}" MinWidth="120" Command="{x:Bind ViewModel.AddCommand}">
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <Button Style="{StaticResource AccentButtonStyle}" Command="{x:Bind ViewModel.AddCommand}">
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <FontIcon Glyph="&#xE8FA;" FontSize="14" />
-                                    <TextBlock Text="Добавить пользователя" />
-                                </StackPanel>
-                            </Button>
-                            <Button Command="{x:Bind ViewModel.AddAndContinueCommand}">
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <FontIcon Glyph="&#xE710;" FontSize="14" />
-                                    <TextBlock Text="Добавить и создать ещё" />
-                                </StackPanel>
-                            </Button>
-                            <ProgressRing Width="20" Height="20" IsActive="{x:Bind ViewModel.IsBusy, Mode=OneWay}" />
+                            <FontIcon Glyph="&#xE8FA;" FontSize="14" />
+                            <TextBlock Text="Создать" />
                         </StackPanel>
-                    </StackPanel>
-                </Border>
+                    </Button>
+                    <Button Command="{x:Bind ViewModel.AddAndContinueCommand}">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon Glyph="&#xE710;" FontSize="14" />
+                            <TextBlock Text="Создать и добавить ещё" />
+                        </StackPanel>
+                    </Button>
+                    <Button Content="Отмена" MinWidth="100" Command="{x:Bind ViewModel.CancelCommand}" />
+                    <ProgressRing Width="20" Height="20" Margin="4,0,0,0" IsActive="{x:Bind ViewModel.IsBusy, Mode=OneWay}" />
+                </StackPanel>
             </StackPanel>
         </Grid>
     </ScrollViewer>
