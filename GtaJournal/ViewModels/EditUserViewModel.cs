@@ -26,7 +26,8 @@ public sealed partial class EditUserViewModel(ViewModelContext context) : ViewMo
     public partial double Rank { get; set; } = 1;
 
     [ObservableProperty] public partial int StatusIndex { get; set; }
-    [ObservableProperty] public partial bool IsAdmin { get; set; }
+    [ObservableProperty, NotifyCanExecuteChangedFor(nameof(SaveCommand))]
+    public partial bool IsAdmin { get; set; }
     [ObservableProperty] public partial bool UpdateAvatar { get; set; }
 
     public const int MinRank = 1, MaxRank = 100;
@@ -67,7 +68,8 @@ public sealed partial class EditUserViewModel(ViewModelContext context) : ViewMo
 
     private bool CanSave() =>
         IsLoaded
-        && Models.Nickname.IsValid(Nickname, requireTag: UseTags)
+        // Администраторы обычно не состоят в подразделении — тег у них не обязателен.
+        && Models.Nickname.IsValid(Nickname, requireTag: UseTags && !IsAdmin)
         && !double.IsNaN(Rank) && Rank is >= MinRank and <= MaxRank
         && Bank.Trim().Length > 0;
 
