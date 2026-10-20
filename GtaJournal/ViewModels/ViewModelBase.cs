@@ -13,7 +13,8 @@ public sealed record ViewModelContext(
     DialogService Dialogs,
     SettingsService Settings,
     TagService Tags,
-    AvatarService Avatars);
+    AvatarService Avatars,
+    UpdateService Updates);
 
 public abstract partial class ViewModelBase(ViewModelContext context) : ObservableObject, INavigationAware
 {

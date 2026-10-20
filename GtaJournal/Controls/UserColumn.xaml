@@ -14,17 +14,17 @@
                         <MenuFlyoutItem Text="Скопировать упоминание" Command="{x:Bind CopyMentionCommand}">
                             <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE8C8;" /></MenuFlyoutItem.Icon>
                         </MenuFlyoutItem>
-                        <MenuFlyoutSeparator Visibility="{x:Bind h:Bind.Visible(CanManage)}" />
+                        <MenuFlyoutSeparator Visibility="{x:Bind h:Bind.Visible(CanEdit)}" />
                         <MenuFlyoutSubItem Text="Изменить статус" Visibility="{x:Bind h:Bind.Visible(CanManage)}">
                             <MenuFlyoutSubItem.Icon><FontIcon Glyph="&#xE8AB;" /></MenuFlyoutSubItem.Icon>
                             <MenuFlyoutItem Text="Онлайн" Command="{x:Bind SetOnlineCommand}" />
                             <MenuFlyoutItem Text="АФК" Command="{x:Bind SetAfkCommand}" />
                             <MenuFlyoutItem Text="Оффлайн" Command="{x:Bind SetOfflineCommand}" />
                         </MenuFlyoutSubItem>
-                        <MenuFlyoutItem Text="Онлайн пользователя" Command="{x:Bind OpenStatsCommand}" Visibility="{x:Bind h:Bind.Visible(CanManage)}">
+                        <MenuFlyoutItem Text="Онлайн пользователя" Command="{x:Bind OpenStatsCommand}" Visibility="{x:Bind h:Bind.Visible(CanEdit)}">
                             <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE787;" /></MenuFlyoutItem.Icon>
                         </MenuFlyoutItem>
-                        <MenuFlyoutItem Text="Изменить пользователя" Command="{x:Bind EditCommand}" Visibility="{x:Bind h:Bind.Visible(CanManage)}">
+                        <MenuFlyoutItem Text="Изменить пользователя" Command="{x:Bind EditCommand}" Visibility="{x:Bind h:Bind.Visible(CanEdit)}">
                             <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE70F;" /></MenuFlyoutItem.Icon>
                         </MenuFlyoutItem>
                         <MenuFlyoutSeparator Visibility="{x:Bind h:Bind.Visible(CanManage)}" />

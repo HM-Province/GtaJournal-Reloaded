@@ -9,6 +9,9 @@ public static class Program
 {
     private const string InstanceKey = "GtaJournal.Main";
 
+    /// <summary>По этому мьютексу установщик ждёт закрытия приложения (installer\GtaJournal.iss).</summary>
+    private const string AppMutexName = "GtaJournal.AppMutex";
+
     [STAThread]
     private static int Main(string[] args)
     {
@@ -23,6 +26,7 @@ public static class Program
         }
 
         current.Activated += (_, _) => App.OnRedirectedActivation();
+        using var appMutex = new Mutex(false, AppMutexName);
 
         Application.Start(p =>
         {

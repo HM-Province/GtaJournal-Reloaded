@@ -3,6 +3,13 @@ using GtaJournal.Data.Repositories;
 
 namespace GtaJournal.Services;
 
+public enum AppTheme
+{
+    System,
+    Light,
+    Dark,
+}
+
 /// <summary>Снимок настроек приложения (иммутабельный, меняется целиком через <see cref="SettingsService.SaveAsync"/>).</summary>
 public sealed record AppSettings
 {
@@ -14,6 +21,7 @@ public sealed record AppSettings
     public bool Notifications { get; init; } = true;
     public bool MinimizeToTray { get; init; } = true;
     public bool UseTags { get; init; }
+    public AppTheme Theme { get; init; } = AppTheme.System;
     public long? ActiveAccountId { get; init; }
 
     public Uri BaseUri => new(BaseUrl.TrimEnd('/') + "/");
@@ -33,6 +41,7 @@ public sealed class SettingsService
     private const string MinimizeToTrayKey = "minimize_to_tray";
     private const string ActiveAccountKey = "active_account_id";
     private const string UseTagsKey = "use_tags";
+    private const string ThemeKey = "theme";
 
     private readonly SettingsRepository _repository;
 
@@ -53,6 +62,9 @@ public sealed class SettingsService
             Notifications = ReadBool(values, NotificationsKey, defaults.Notifications),
             MinimizeToTray = ReadBool(values, MinimizeToTrayKey, defaults.MinimizeToTray),
             UseTags = ReadBool(values, UseTagsKey, defaults.UseTags),
+            Theme = Enum.TryParse<AppTheme>(values.GetValueOrDefault(ThemeKey), ignoreCase: true, out var theme) && Enum.IsDefined(theme)
+                ? theme
+                : defaults.Theme,
             ActiveAccountId = long.TryParse(values.GetValueOrDefault(ActiveAccountKey), out var id) && id > 0 ? id : null,
         };
     }
@@ -75,6 +87,7 @@ public sealed class SettingsService
             [NotificationsKey] = settings.Notifications ? "1" : "0",
             [MinimizeToTrayKey] = settings.MinimizeToTray ? "1" : "0",
             [UseTagsKey] = settings.UseTags ? "1" : "0",
+            [ThemeKey] = settings.Theme.ToString().ToLowerInvariant(),
             [ActiveAccountKey] = settings.ActiveAccountId?.ToString(CultureInfo.InvariantCulture) ?? "0",
         });
         Current = settings;

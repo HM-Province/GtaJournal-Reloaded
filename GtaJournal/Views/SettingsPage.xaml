@@ -13,6 +13,14 @@
                 <TextBlock Text="Настройки" Style="{StaticResource PageTitleStyle}" Margin="0" />
 
                 <Border Style="{StaticResource CardStyle}">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Оформление" Style="{StaticResource SectionTitleStyle}" />
+                        <RadioButtons Header="Тема" MaxColumns="3" ItemsSource="{x:Bind ViewModel.ThemeOptions}"
+                                      SelectedIndex="{x:Bind ViewModel.ThemeIndex, Mode=TwoWay}" />
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource CardStyle}">
                     <StackPanel Spacing="14">
                         <TextBlock Text="Наблюдение за игрой" Style="{StaticResource SectionTitleStyle}" Margin="0" />
                         <StackPanel>
@@ -97,6 +105,25 @@
                         <TextBlock Text="Сохранить изменения" />
                     </StackPanel>
                 </Button>
+
+                <Border Style="{StaticResource CardStyle}" Margin="0,12,0,0">
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="О приложении" Style="{StaticResource SectionTitleStyle}" Margin="0" />
+                            <TextBlock Text="{x:Bind ViewModel.AppVersion}" Style="{StaticResource HintTextStyle}" />
+                        </StackPanel>
+                        <Button Grid.Column="1" VerticalAlignment="Center" Command="{x:Bind ViewModel.CheckUpdatesCommand}">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE895;" FontSize="14" />
+                                <TextBlock Text="Проверить обновления" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                </Border>
             </StackPanel>
         </Grid>
     </ScrollViewer>

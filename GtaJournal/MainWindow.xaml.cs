@@ -45,6 +45,13 @@ public sealed partial class MainWindow : Window
         }
         CenterOnScreen();
 
+        ApplyTheme(_settings.Current.Theme);
+        RootGrid.ActualThemeChanged += (_, _) => UpdateTitleBarButtons();
+        _settings.Changed += (old, current) =>
+        {
+            if (old.Theme != current.Theme) ApplyTheme(current.Theme);
+        };
+
         _messages.Attach(DispatcherQueue);
         MessagesHost.ItemsSource = _messages.Items;
 
@@ -143,6 +150,31 @@ public sealed partial class MainWindow : Window
     private void OnMessageClosed(InfoBar sender, object args)
     {
         if (sender.DataContext is AppMessage message) _messages.Dismiss(message);
+    }
+
+    private void ApplyTheme(AppTheme theme)
+    {
+        RootGrid.RequestedTheme = theme switch
+        {
+            AppTheme.Light => ElementTheme.Light,
+            AppTheme.Dark => ElementTheme.Dark,
+            _ => ElementTheme.Default,
+        };
+        UpdateTitleBarButtons();
+    }
+
+    /// <summary>Кнопки заголовка рисует система — их цвета под выбранную тему задаём вручную.</summary>
+    private void UpdateTitleBarButtons()
+    {
+        var dark = RootGrid.ActualTheme == ElementTheme.Dark;
+        var foreground = dark ? Colors.White : Colors.Black;
+        var bar = AppWindow.TitleBar;
+        bar.ButtonForegroundColor = foreground;
+        bar.ButtonHoverForegroundColor = foreground;
+        bar.ButtonPressedForegroundColor = foreground;
+        bar.ButtonInactiveForegroundColor = dark ? Windows.UI.Color.FromArgb(255, 0x9A, 0x9A, 0x9A) : Windows.UI.Color.FromArgb(255, 0x8A, 0x8A, 0x8A);
+        bar.ButtonHoverBackgroundColor = Windows.UI.Color.FromArgb(0x18, foreground.R, foreground.G, foreground.B);
+        bar.ButtonPressedBackgroundColor = Windows.UI.Color.FromArgb(0x30, foreground.R, foreground.G, foreground.B);
     }
 
     private void CenterOnScreen()

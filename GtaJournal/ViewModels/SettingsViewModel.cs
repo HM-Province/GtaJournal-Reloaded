@@ -35,6 +35,14 @@ public sealed partial class SettingsViewModel(ViewModelContext context) : ViewMo
     [ObservableProperty] public partial bool MinimizeToTray { get; set; }
     [ObservableProperty] public partial bool UseTags { get; set; }
 
+    /// <summary>Индекс в <see cref="ThemeOptions"/>; тема применяется и сохраняется сразу, без кнопки «Сохранить».</summary>
+    [ObservableProperty] public partial int ThemeIndex { get; set; }
+
+    public IReadOnlyList<string> ThemeOptions { get; } = ["Как в системе", "Светлая", "Тёмная"];
+    private static readonly AppTheme[] ThemeValues = [AppTheme.System, AppTheme.Light, AppTheme.Dark];
+
+    public string AppVersion => $"Версия {UpdateService.CurrentVersion.ToString(3)}";
+
     public ObservableCollection<UnitTagEditor> Tags { get; } = [];
     public ObservableCollection<string> ProcessSuggestions { get; } = [];
 
@@ -52,6 +60,7 @@ public sealed partial class SettingsViewModel(ViewModelContext context) : ViewMo
         Notifications = s.Notifications;
         MinimizeToTray = s.MinimizeToTray;
         UseTags = s.UseTags;
+        ThemeIndex = Math.Max(0, Array.IndexOf(ThemeValues, s.Theme));
 
         Tags.Clear();
         foreach (var t in Context.Tags.Tags)
@@ -72,6 +81,17 @@ public sealed partial class SettingsViewModel(ViewModelContext context) : ViewMo
         ProcessSuggestions.Clear();
         foreach (var n in names) ProcessSuggestions.Add(n);
     }
+
+    partial void OnThemeIndexChanged(int value)
+    {
+        if (value < 0 || value >= ThemeValues.Length) return;
+        var theme = ThemeValues[value];
+        if (theme == SettingsStore.Current.Theme) return;
+        _ = RunAsync(() => SettingsStore.UpdateAsync(s => s with { Theme = theme }), "Не удалось сменить тему", showBusy: false);
+    }
+
+    [RelayCommand]
+    private Task CheckUpdatesAsync() => Context.Updates.CheckAsync(interactive: true);
 
     [RelayCommand]
     private void AddTag() => Tags.Add(new UnitTagEditor { Tag = "", Title = "", Color = "#F97316" });

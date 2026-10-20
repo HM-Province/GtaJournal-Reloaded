@@ -271,9 +271,33 @@ public sealed partial class DashboardViewModel : ViewModelBase, IUserActions
         await RefreshAsync();
     }
 
-    public void OpenUserStats(UserItemViewModel user) => Navigation.Navigate(Routes.UserStats, user.Model.Id);
+    public async Task OpenUserStatsAsync(UserItemViewModel user)
+    {
+        if (await ResolveUserIdAsync(user) is { } id) Navigation.Navigate(Routes.UserStats, id);
+    }
 
-    public void EditUser(UserItemViewModel user) => Navigation.Navigate(Routes.EditUser, user.Model.Id);
+    public async Task EditUserAsync(UserItemViewModel user)
+    {
+        if (await ResolveUserIdAsync(user) is { } id) Navigation.Navigate(Routes.EditUser, id);
+    }
+
+    /// <summary>
+    /// У администраторов сайт не выводит в списке ссылку на профиль, поэтому id
+    /// ищется по нику в списке пользователей страницы статистики.
+    /// </summary>
+    private async Task<long?> ResolveUserIdAsync(UserItemViewModel user)
+    {
+        if (user.Model.Id is { } known) return known;
+
+        long? id = null;
+        await RunAsync(async () =>
+        {
+            var users = (await Client.GetUserStatisticsAsync(null, null)).Users;
+            id = users.FirstOrDefault(u => string.Equals(Nickname.Split(u.Name).Name, user.Username, StringComparison.OrdinalIgnoreCase))?.Id;
+            if (id is null) Messages.Warning("Пользователь не найден", user.Username);
+        }, "Не удалось найти пользователя");
+        return id;
+    }
 
     public async Task DeleteUserAsync(UserItemViewModel user)
     {

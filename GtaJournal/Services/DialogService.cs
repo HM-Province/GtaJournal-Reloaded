@@ -10,12 +10,16 @@ public sealed class DialogService
 
     public void Attach(XamlRoot root) => _xamlRoot = root;
 
+    /// <summary>Диалог живёт в отдельном слое и сам тему окна не наследует.</summary>
+    private ElementTheme RootTheme => (_xamlRoot?.Content as FrameworkElement)?.ActualTheme ?? ElementTheme.Default;
+
     public async Task<bool> ConfirmAsync(string title, string message, string confirm, string cancel = "Отмена", bool destructive = false)
     {
         if (_xamlRoot is null) return false;
         var dialog = new ContentDialog
         {
             XamlRoot = _xamlRoot,
+            RequestedTheme = RootTheme,
             Title = title,
             Content = new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap },
             PrimaryButtonText = confirm,
@@ -34,6 +38,7 @@ public sealed class DialogService
         var dialog = new ContentDialog
         {
             XamlRoot = _xamlRoot,
+            RequestedTheme = RootTheme,
             Title = title,
             Content = box,
             PrimaryButtonText = confirm,

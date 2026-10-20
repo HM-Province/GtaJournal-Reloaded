@@ -1,0 +1,36 @@
+# Релиз по тегу вида v1.2.0: сборка установщиков и публикация в GitHub Releases.
+# Приложение проверяет последний релиз и само предлагает обновиться.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Inno Setup
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) {
+            choco install innosetup -y --no-progress
+          }
+
+      - name: Build installers
+        shell: pwsh
+        run: ./installer/build.ps1 -Version $env:GITHUB_REF_NAME.TrimStart('v')
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/installer/*.exe
+          generate_release_notes: true

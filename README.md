@@ -1,48 +1,46 @@
-# GTA Journal (WinUI 3)
+# GTA Journal
 
-Клиент для status-journal.com: статусы, списки онлайна, статистика, управление пользователями, несколько аккаунтов, 2FA.
+Приложение для [status-journal.com](https://status-journal.com) под Windows: статусы, списки онлайна,
+статистика, управление пользователями, несколько аккаунтов и двухфакторная авторизация.
 
-## Структура
+## Скачать
 
-```
-GtaJournal/
-  Core/Navigation/   роутер: RouteRegistry, NavigationService (гарды), RoutedPage, AppRoutes (все страницы)
-  Data/              SQLite: Database, репозитории, Migrations/ (раннер + Scripts/*.sql)
-  Models/            модели журнала и аккаунта
-  Services/          аккаунты, статус и наблюдение за процессом, HTTP-клиент журнала и парсер, звук, уведомления, трей
-  ViewModels/        MVVM (CommunityToolkit.Mvvm), общие зависимости — ViewModelContext
-  Views/             страницы (XAML, x:Bind)
-  Controls/          переиспользуемые контролы (календарь онлайна)
-  Styles/            общие стили
-```
+Откройте страницу [последнего релиза](https://github.com/HM-Province/GtaJournal-Reloaded/releases/latest)
+и в разделе **Assets** скачайте установщик для своего компьютера:
 
-## Как добавить страницу
+| Файл | Для кого |
+|---|---|
+| `GtaJournal-Setup-<версия>-x64.exe` | большинство компьютеров — выбирайте его, если не уверены |
+| `GtaJournal-Setup-<версия>-arm64.exe` | ноутбуки на процессорах ARM (Snapdragon) |
+| `GtaJournal-Setup-<версия>-x86.exe` | 32-битная Windows |
 
-1. `Views/FooPage.xaml` — корневой элемент `nav:RoutedPage`; в code-behind:
-   `ViewModel = App.GetService<FooViewModel>()` и `protected override object? NavigationTarget => ViewModel;`
-2. `ViewModels/FooViewModel.cs` — наследник `ViewModelBase`; параметр перехода приходит в `OnNavigatedToAsync`.
-3. Зарегистрировать VM в `App.ConfigureServices`: `services.AddTransient<FooViewModel>();`
-4. Добавить маршрут в `Core/Navigation/AppRoutes.cs`:
-   ```csharp
-   .Add<FooPage>("foo", r => r with { Title = "Foo", Glyph = "", Menu = MenuPlacement.Main, Order = 40 })
-   ```
-   Пункт меню появится сам. Флаги `RequiresSession` / `RequiresAdmin` проверяются гардами.
+Требуется Windows 10 (версия 1809 или новее) или Windows 11. Ничего дополнительно устанавливать не нужно.
 
-Переход: `Navigation.Navigate("foo", параметр)`.
+## Установить
 
-## Как добавить миграцию
+1. Запустите скачанный файл `GtaJournal-Setup-...exe`.
+2. Если Windows покажет окно «Windows защитила ваш компьютер», нажмите **Подробнее** → **Выполнить в любом случае**.
+3. Следуйте шагам установщика. Права администратора не нужны — приложение ставится только для вашей учётной записи.
+4. После установки GTA Journal появится в меню «Пуск» (и на рабочем столе, если отметили этот пункт).
 
-Положить файл `Data/Migrations/Scripts/NNNN_Name.sql` с номером больше последнего. Скрипты вшиваются в сборку
-(EmbeddedResource), применяются при запуске по порядку имён, каждый в своей транзакции; применённые
-записываются в `__migrations_history`. Регистрировать ничего не нужно.
+## Обновить
 
-## Публикация
+Приложение само проверяет обновления при запуске и затем каждые несколько часов. Когда выйдет новая версия,
+появится окно **«Доступно обновление»** — нажмите **Обновить**: приложение скачает новую версию, закроется,
+установит её и запустится снова. Аккаунты и настройки сохраняются.
 
-```
-dotnet publish -c Release -p:Platform=x64 -p:PublishProfile=win-x64
-```
+Проверить вручную: **Настройки** → **О приложении** → **Проверить обновления**.
 
-Тримминг выключен намеренно: CsWinRT не генерирует WinRT-vtable для коллекций, передаваемых в `ItemsSource`,
-и тримленная сборка падает при запуске.
+Можно обновиться и вручную: скачайте новый установщик (см. «Скачать») и запустите его поверх старой версии.
 
-Данные приложения: `%LOCALAPPDATA%\GtaJournal\journal.db`, ошибки — `error.log` там же.
+## Удалить
+
+**Параметры Windows** → **Приложения** → **Установленные приложения** → **GTA Journal** → **Удалить**.
+
+Аккаунты и настройки остаются в папке `%LOCALAPPDATA%\GtaJournal` — удалите её, если они больше не нужны.
+
+## Если что-то не работает
+
+- Приложение работает в трее: если окно закрыто, ищите значок у часов (правый клик → «Выход» закрывает полностью).
+- Ошибки записываются в файл `%LOCALAPPDATA%\GtaJournal\error.log` — приложите его, когда пишете о проблеме
+  в [Issues](https://github.com/HM-Province/GtaJournal-Reloaded/issues).

@@ -12,8 +12,8 @@ public interface IUserActions
     bool CanManageUsers { get; }
     void CopyMention(UserItemViewModel user);
     Task SetUserStatusAsync(UserItemViewModel user, JournalStatus status);
-    void OpenUserStats(UserItemViewModel user);
-    void EditUser(UserItemViewModel user);
+    Task OpenUserStatsAsync(UserItemViewModel user);
+    Task EditUserAsync(UserItemViewModel user);
     Task DeleteUserAsync(UserItemViewModel user);
 }
 
@@ -48,7 +48,11 @@ public sealed partial class UserItemViewModel : ObservableObject
 
     [ObservableProperty] public partial ImageSource? Avatar { get; private set; }
 
+    /// <summary>Смена статуса и удаление — только по id из ссылки в списке.</summary>
     public bool CanManage => _actions.CanManageUsers && Model.Id is not null;
+
+    /// <summary>Изменение и онлайн доступны и для администраторов: у них в списке нет ссылки, id находится по нику.</summary>
+    public bool CanEdit => _actions.CanManageUsers;
 
     public bool Matches(string filter) =>
         filter.Length == 0
@@ -60,7 +64,7 @@ public sealed partial class UserItemViewModel : ObservableObject
     [RelayCommand] private Task SetOnline() => _actions.SetUserStatusAsync(this, JournalStatus.Online);
     [RelayCommand] private Task SetAfk() => _actions.SetUserStatusAsync(this, JournalStatus.Afk);
     [RelayCommand] private Task SetOffline() => _actions.SetUserStatusAsync(this, JournalStatus.Offline);
-    [RelayCommand] private void OpenStats() => _actions.OpenUserStats(this);
-    [RelayCommand] private void Edit() => _actions.EditUser(this);
+    [RelayCommand] private Task OpenStats() => _actions.OpenUserStatsAsync(this);
+    [RelayCommand] private Task Edit() => _actions.EditUserAsync(this);
     [RelayCommand] private Task Delete() => _actions.DeleteUserAsync(this);
 }

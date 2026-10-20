@@ -75,6 +75,22 @@ public partial class App : Application
         navigation.Navigate(accounts.Client?.HasSession == true ? Routes.Dashboard : Routes.Login, new LoginRequest(accounts.ActiveAccount?.Id));
 
         GetService<StatusService>().Start();
+
+#if !DEBUG
+        _ = CheckUpdatesPeriodicallyAsync();
+#endif
+    }
+
+    /// <summary>Проверка обновлений вскоре после запуска и далее раз в 6 часов (приложение подолгу живёт в трее).</summary>
+    private static async Task CheckUpdatesPeriodicallyAsync()
+    {
+        var updates = GetService<UpdateService>();
+        await Task.Delay(TimeSpan.FromSeconds(5));
+        while (true)
+        {
+            await updates.CheckAsync(interactive: false);
+            await Task.Delay(TimeSpan.FromHours(6));
+        }
     }
 
     private static IServiceProvider ConfigureServices(Database database)
@@ -97,6 +113,7 @@ public partial class App : Application
         services.AddSingleton<MessageService>();
         services.AddSingleton<DialogService>();
         services.AddSingleton<AvatarService>();
+        services.AddSingleton<UpdateService>();
         services.AddSingleton(AppRoutes.Create());
         services.AddSingleton<NavigationService>();
         services.AddSingleton<ViewModelContext>();
