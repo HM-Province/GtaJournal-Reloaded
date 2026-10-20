@@ -3,13 +3,13 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GtaJournal.Core.Navigation;
 using GtaJournal.Models;
+using GtaJournal.Services;
 
 namespace GtaJournal.ViewModels;
 
 public sealed partial class UserStatsViewModel(ViewModelContext context) : ViewModelBase(context)
 {
     private bool _suppressReload;
-    private int _loadVersion;
 
     public ObservableCollection<UserOption> Users { get; } = [];
     public IReadOnlyList<MonthOption> Months { get; } = MonthOption.All();
@@ -66,35 +66,34 @@ public sealed partial class UserStatsViewModel(ViewModelContext context) : ViewM
 
     private async Task LoadAsync(long? userId)
     {
-        var version = ++_loadVersion;
-        await RunAsync(async () =>
+        var month = SelectedMonth is null || SelectedMonth == Months[0] ? null : SelectedMonth;
+        await QueryAsync(QueryKeys.UserStatistics(userId, month),c => c.GetUserStatisticsAsync(userId, month),
+            data => Apply(data, userId), "Не удалось загрузить онлайн пользователя");
+        IsLoaded = true;
+    }
+
+    private void Apply(UserStatisticsData data, long? userId)
+    {
+        _suppressReload = true;
+        try
         {
-            var month = SelectedMonth is null || SelectedMonth == Months[0] ? null : SelectedMonth;
-            var data = await Client.GetUserStatisticsAsync(userId, month);
-            if (version != _loadVersion) return;
-
-            _suppressReload = true;
-            try
+            if (!Users.SequenceEqual(data.Users))
             {
-                if (!Users.SequenceEqual(data.Users))
-                {
-                    Users.Clear();
-                    foreach (var u in data.Users) Users.Add(u);
-                }
-                SelectedUser = Users.FirstOrDefault(u => u.Id == (data.SelectedUserId ?? userId));
+                Users.Clear();
+                foreach (var u in data.Users) Users.Add(u);
             }
-            finally
-            {
-                _suppressReload = false;
-            }
+            SelectedUser = Users.FirstOrDefault(u => u.Id == (data.SelectedUserId ?? userId));
+        }
+        finally
+        {
+            _suppressReload = false;
+        }
 
-            Bank = data.Bank;
-            FirstHalf = data.FirstHalf;
-            SecondHalf = data.SecondHalf;
-            Calendar = data.Calendar;
-            Summary = data.Calendar?.Summary;
-            IsLoaded = true;
-        }, "Не удалось загрузить онлайн пользователя");
+        Bank = data.Bank;
+        FirstHalf = data.FirstHalf;
+        SecondHalf = data.SecondHalf;
+        Calendar = data.Calendar;
+        Summary = data.Calendar?.Summary;
         IsLoaded = true;
     }
 

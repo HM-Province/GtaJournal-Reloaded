@@ -108,29 +108,32 @@ public sealed partial class DashboardViewModel : ViewModelBase, IUserActions
     {
         IsLoaded = false;
         NotifyProfileChanged();
-        await RunAsync(async () =>
+        await QueryAsync(QueryKeys.Dashboard,c => c.GetDashboardAsync(), Apply, "Не удалось загрузить панель", async data =>
         {
-            var data = await Client.GetDashboardAsync();
             await Accounts.SetProfileAsync(data.Profile);
-
-            _online = data.Online.Select(Wrap).ToList();
-            _afk = data.Afk.Select(Wrap).ToList();
-            _offline = data.Offline.Select(Wrap).ToList();
-
-            TotalText = $"Всего в журнале: {_online.Count + _afk.Count + _offline.Count}";
-            BuildUnitStats();
-
-            var moscow = TimeZoneInfo.ConvertTime(DateTimeOffset.Now, MoscowTime.Zone);
-            LastUpdateText = $"Обновлено в {moscow:HH:mm:ss} МСК";
             IsLoaded = true;
-            ApplyFilter();
-
             // Как и раньше: если игра закрыта, а статус не «Оффлайн» — снимаем.
             await _status.CheckAsync();
-        }, "Не удалось загрузить панель");
+        });
         IsLoaded = true;
         NotifyProfileChanged();
         NotifyEmptyStates();
+    }
+
+    /// <summary>Показывает списки — и из кэша, и свежие. Профиль берётся только из свежих данных.</summary>
+    private void Apply(DashboardData data)
+    {
+        _online = data.Online.Select(Wrap).ToList();
+        _afk = data.Afk.Select(Wrap).ToList();
+        _offline = data.Offline.Select(Wrap).ToList();
+
+        TotalText = $"Всего в журнале: {_online.Count + _afk.Count + _offline.Count}";
+        BuildUnitStats();
+
+        var updatedAt = Cache.UpdatedAt(QueryKeys.Dashboard) ?? DateTimeOffset.Now;
+        var moscow = TimeZoneInfo.ConvertTime(updatedAt, MoscowTime.Zone);
+        LastUpdateText = $"Обновлено в {moscow:HH:mm:ss} МСК";
+        ApplyFilter();
     }
 
     [RelayCommand(CanExecute = nameof(CanSetStatus))]
@@ -292,8 +295,13 @@ public sealed partial class DashboardViewModel : ViewModelBase, IUserActions
         long? id = null;
         await RunAsync(async () =>
         {
-            var users = (await Client.GetUserStatisticsAsync(null, null)).Users;
-            id = users.FirstOrDefault(u => string.Equals(Nickname.Split(u.Name).Name, user.Username, StringComparison.OrdinalIgnoreCase))?.Id;
+            long? Find(UserStatisticsData stats) =>
+                stats.Users.FirstOrDefault(u => string.Equals(Nickname.Split(u.Name).Name, user.Username, StringComparison.OrdinalIgnoreCase))?.Id;
+
+            // Список пользователей меняется редко — сначала ищем в кэше, не нашли — запрашиваем свежий.
+            var key = QueryKeys.UserStatistics(null, null);
+            if (Cache.TryGet<UserStatisticsData>(key, out var cached)) id = Find(cached);
+            id ??= Find(await Cache.FetchAsync(key, c => c.GetUserStatisticsAsync(null, null)));
             if (id is null) Messages.Warning("Пользователь не найден", user.Username);
         }, "Не удалось найти пользователя");
         return id;

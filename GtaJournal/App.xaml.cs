@@ -107,6 +107,7 @@ public partial class App : Application
         services.AddSingleton<SettingsService>();
         services.AddSingleton<TagService>();
         services.AddSingleton<AccountService>();
+        services.AddSingleton<QueryCache>();
         services.AddSingleton<StatusService>();
         services.AddSingleton<SoundService>();
         services.AddSingleton<NotificationService>();

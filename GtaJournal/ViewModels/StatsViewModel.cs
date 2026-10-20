@@ -1,13 +1,12 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GtaJournal.Models;
+using GtaJournal.Services;
 
 namespace GtaJournal.ViewModels;
 
 public sealed partial class StatsViewModel(ViewModelContext context) : ViewModelBase(context)
 {
-    private int _loadVersion;
-
     public IReadOnlyList<MonthOption> Months { get; } = MonthOption.All();
 
     [ObservableProperty] public partial MonthOption? SelectedMonth { get; set; }
@@ -33,27 +32,25 @@ public sealed partial class StatsViewModel(ViewModelContext context) : ViewModel
     partial void OnCalendarChanged(CalendarData? value) => OnPropertyChanged(nameof(MonthTitle));
 
     [RelayCommand]
-    private async Task LoadAsync()
+    private Task LoadAsync()
     {
-        var version = ++_loadVersion;
-        await RunAsync(async () =>
-        {
-            // Текущий месяц запрашиваем без даты — так сайт отдаёт и онлайн за сегодня.
-            var month = SelectedMonth is null || SelectedMonth == Months[0] ? null : SelectedMonth;
-            var data = await Client.GetStatisticsAsync(month);
-            if (version != _loadVersion) return; // пока грузили, выбрали другой месяц
+        // Текущий месяц запрашиваем без даты — так сайт отдаёт и онлайн за сегодня.
+        var month = SelectedMonth is null || SelectedMonth == Months[0] ? null : SelectedMonth;
+        return QueryAsync(QueryKeys.Statistics(month),c => c.GetStatisticsAsync(month), Apply, "Не удалось загрузить статистику");
+    }
 
-            DayTitle = $"Онлайн за {data.DayDate}";
-            DayTimeText = OnlineTime.Format(data.DayOnline);
-            DayProgress = Math.Min(100, data.DayOnline.TotalSeconds / data.DailyNorm.TotalSeconds * 100);
-            DayNormReached = data.DayOnline >= data.DailyNorm;
-            NormText = DayNormReached
-                ? $"Норма {OnlineTime.Format(data.DailyNorm)} выполнена"
-                : $"До нормы осталось {OnlineTime.Format(data.DailyNorm - data.DayOnline)}";
+    private void Apply(StatisticsData data)
+    {
+        DayTitle = $"Онлайн за {data.DayDate}";
+        DayTimeText = OnlineTime.Format(data.DayOnline);
+        DayProgress = Math.Min(100, data.DayOnline.TotalSeconds / data.DailyNorm.TotalSeconds * 100);
+        DayNormReached = data.DayOnline >= data.DailyNorm;
+        NormText = DayNormReached
+            ? $"Норма {OnlineTime.Format(data.DailyNorm)} выполнена"
+            : $"До нормы осталось {OnlineTime.Format(data.DailyNorm - data.DayOnline)}";
 
-            Calendar = data.Calendar;
-            Summary = data.Calendar.Summary;
-            IsLoaded = true;
-        }, "Не удалось загрузить статистику");
+        Calendar = data.Calendar;
+        Summary = data.Calendar.Summary;
+        IsLoaded = true;
     }
 }

@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace GtaJournal.Services;
 
@@ -14,7 +15,7 @@ public sealed record AppRelease(Version Version, string Notes, string InstallerN
 /// Автообновление: последний релиз на GitHub → скачанный установщик Inno Setup запускается в тихом режиме,
 /// приложение закрывается, установщик дожидается выхода, ставит новую версию и запускает её.
 /// </summary>
-public sealed class UpdateService(MessageService messages, DialogService dialogs)
+public sealed partial class UpdateService(MessageService messages, DialogService dialogs)
 {
     private const string Repository = "HM-Province/GtaJournal-Reloaded";
     private const string LatestReleaseApi = $"https://api.github.com/repos/{Repository}/releases/latest";
@@ -56,7 +57,8 @@ public sealed class UpdateService(MessageService messages, DialogService dialogs
             // Автоматически не надоедаем версией, от которой уже отказались.
             if (!interactive && release.Version == _declined) return;
 
-            var notes = string.IsNullOrWhiteSpace(release.Notes) ? "" : $"\n\n{Truncate(release.Notes.Trim(), 600)}";
+            var plainNotes = PlainNotes(release.Notes);
+            var notes = plainNotes.Length == 0 ? "" : $"\n\nЧто нового:\n{Truncate(plainNotes, 600)}";
             if (!await dialogs.ConfirmAsync("Доступно обновление",
                     $"Вышла версия {release.Version.ToString(3)} (у вас {CurrentVersion.ToString(3)}). " +
                     $"Установить сейчас? Приложение перезапустится.{notes}",
@@ -155,6 +157,20 @@ public sealed class UpdateService(MessageService messages, DialogService dialogs
 
     /// <summary>1.2 / 1.2.0 / 1.2.0.0 → 1.2.0, иначе 1.2.0 &lt; 1.2.0.0 при сравнении.</summary>
     private static Version Normalize(Version v) => new(v.Major, v.Minor, Math.Max(v.Build, 0));
+
+    /// <summary>
+    /// Описание релиза, сгенерированное GitHub из pull request'ов, — простым текстом для диалога:
+    /// «* Название by @автор in https://…/pull/12» → «• Название»; заголовки, «Full Changelog» и новые участники убираются.
+    /// </summary>
+    private static string PlainNotes(string notes) => string.Join('\n', notes
+        .Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+        .Where(line => !line.StartsWith('#')
+                       && !line.Contains("Full Changelog", StringComparison.OrdinalIgnoreCase)
+                       && !line.Contains("made their first contribution", StringComparison.OrdinalIgnoreCase))
+        .Select(line => PullRequestLine().Replace(line, "• $1")));
+
+    [GeneratedRegex(@"^[*-]\s+(.+?)(?:\s+by\s+@\S+)?(?:\s+in\s+https://\S+)?$")]
+    private static partial Regex PullRequestLine();
 
     private static string Truncate(string text, int max) => text.Length <= max ? text : text[..max].TrimEnd() + "…";
 }
